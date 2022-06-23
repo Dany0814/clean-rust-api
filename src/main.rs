@@ -1,18 +1,25 @@
 use std::env;
 use std::net::TcpListener;
 
+use clean_rust_api::run;
+
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let environment;
-    if let Ok(e) = env::var("ENV"){
-        environment = format!(".env.{}",e);
-    } else {
-        environment = String::from(".env");
-    }
+    
+    // init env vars
+    let environment = match env::var("ENV_NAME") {
+        Ok(val) => format!(".env.{}", val),
+        Err(_e) => String::from(".env"),
+    };
+
+    // building address and ip
+    let host = std::env::var("HOST_API").unwrap_or("127.0.0.1".to_string());
+    let port = std::env::var("PORT_API").unwrap_or("8080".to_string());
+    let address = format!("{}:{}", host, port);
 
     dotenv::from_filename(environment).ok();
 
-    let listener = TcpListener::bind("0.0.0.0:8888").expect("Failed to bind random port");
-    let database_name = dotenv::var("DATABASE_NAME").expect("DATABASE_NAME must be set");
+    let listener = TcpListener::bind(address).expect("Failed to bind random port");
 
-    run(listener, &database_name)?.await
+    run(listener)?.await
 }
